@@ -1,23 +1,27 @@
 using UnityEngine;
+using Mandible.PlayerController;
 
-public class Player : MonoBehaviour, IPlayer
+namespace Mandible.PlayerController 
 {
-    [Header("Components")]
-    [SerializeField] private PlayerController controller;
-
-    public PlayerController Controller => controller;
-
-    public IInputSystem Input { get; private set; }
-    
-    void Awake()
+    public class Player : MonoBehaviour, IPlayer
     {
-        controller = GetComponent<PlayerController>();
+        [Header("Components")]
+        [SerializeField] private PlayerController controller;
 
-        Input = new PlayerInputSystem();
-    }
+        public PlayerController Controller => controller;
 
-    void Update()
-    {
-        Input?.Update();
+        public IInputSystem Input { get; private set; }
+        
+        void Awake()
+        {
+            controller = GetComponent<PlayerController>();
+
+            Input = new PlayerInputSystem();
+        }
+
+        void Update()
+        {
+            Input?.Update();
+        }
     }
 }
