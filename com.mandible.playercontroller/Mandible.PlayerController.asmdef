@@ -1,0 +1,24 @@
+{
+    "name": "Mandible.PlayerController",
+    "rootNamespace": "",
+    "references": [
+        "GUID:ef8b64a5d02ba1545b589673e5f7d023",
+        "GUID:75469ad4d38634e559750d17036d5f7c",
+        "GUID:8a33b921c6a4a91449b57791aa292d24"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [
+        {
+            "name": "com.mandible.playercontroller",
+            "expression": "0.0.0",
+            "define": "MANDIBLE_PLAYER_CONTROLLER"
+        }
+    ],
+    "noEngineReferences": false
+}

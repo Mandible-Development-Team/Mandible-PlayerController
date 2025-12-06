@@ -1,0 +1,14 @@
+{
+  "name": "com.mandible.playercontroller",
+  "version": "0.1.0-preview",
+  "displayName": "Mandible Player Controller",
+  "description": "Custom kinematic player controller.",
+  "defineConstraints": [
+    {
+      "name": "MANDIBLE_PLAYER_CONTROLLER"
+    }
+  ],
+  "dependencies": {
+    "com.mandible.generic": "0.0.0"
+  }
+}
