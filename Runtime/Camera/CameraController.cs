@@ -1,21 +1,21 @@
 using UnityEngine;
 using UnityEngine.InputSystem;
 using Mandible.PlayerController;
-using Mandible.Systems.Data;
+using Mandible.Core.Data;
 
 namespace Mandible.PlayerController
 {
     public class CameraController : MonoBehaviour
     {
-        #if MANDIBLE_PLAYER_CONTROLLER
         [SerializeField] private PlayerController playerController;
-        #endif
+        private Camera camera;
         
         [Header("Settings")]
         [Space(8)]
-        [SerializeField] float mouseSensitivity = 3f;
-        [SerializeField] float controllerSensitivity = 150f;
-        [SerializeField] bool enableProceduralEffects = true;
+        [SerializeField] public float mouseSensitivity = 3f;
+        [SerializeField] public float controllerSensitivity = 150f;
+        [SerializeField] public float baseFOV = 60f;
+        [SerializeField] public bool enableProceduralEffects = true;
 
         [Header("Procedural Motion - Bob")]
         [Space(8)]
@@ -42,15 +42,22 @@ namespace Mandible.PlayerController
         [HideInInspector] private Vector3 shakeOffset = Vector3.zero;
         [HideInInspector] private Vector3 shakeVelocity = Vector3.zero;
 
+        [Header("Advanced")]
+        [Range(0f, 1f)]
+        public float cameraStability = 0f;
+
         [Header("Config")]
         [SerializeField] PlayerConfigData configData;
-
+    
         // Input System
         PlayerInputActions input;
         InputDevice currentDevice;
         Vector2 lookInput = Vector3.zero;
         Vector3 localPos;
+
+        // Transform
         float yaw, pitch;
+        Vector2 recoil;
 
         void Awake()
         {
@@ -62,9 +69,7 @@ namespace Mandible.PlayerController
             input.Enable();
 
             //Events
-            #if MANDIBLE_PLAYER_CONTROLLER
             EnablePlayerControllerEvents();
-            #endif
         }
 
         void OnDisable()
@@ -72,28 +77,23 @@ namespace Mandible.PlayerController
             input.Disable();
 
             //Events
-            #if MANDIBLE_PLAYER_CONTROLLER
             DisablePlayerControllerEvents();
-            #endif
         }
 
         void Start()
         {
+            camera = GetComponent<Camera>();
+
+            //Initialize
             localPos = transform.localPosition;
+            SetFOV(baseFOV);
         }
 
         void Update()
         {
-            if (lookInput.sqrMagnitude > 0.001f)
-            {
-                HandleLook();
-            }
+            HandleLook();
 
-
-            #if MANDIBLE_PLAYER_CONTROLLER
             HandleControllerParameters();
-            #endif
-            
 
             if (enableProceduralEffects)
             {
@@ -101,6 +101,8 @@ namespace Mandible.PlayerController
             }
         }
 
+        //Look
+        private const float LOOK_PITCH_EPSILON = 1e-3f;
         void HandleLook()
         {
             float sensitivity = mouseSensitivity;
@@ -108,12 +110,26 @@ namespace Mandible.PlayerController
             if (currentDevice is Gamepad)
                 sensitivity = controllerSensitivity;
             
-            yaw += lookInput.x * sensitivity * Time.deltaTime;
+            //yaw += lookInput.x * sensitivity * Time.deltaTime;
             pitch -= lookInput.y * sensitivity * Time.deltaTime;
 
-            pitch = Mathf.Clamp(pitch, -90f, 90f);
+            pitch = Mathf.Clamp(pitch, -90f + LOOK_PITCH_EPSILON, 90f - LOOK_PITCH_EPSILON);
 
-            transform.localRotation = Quaternion.Euler(pitch, transform.rotation.y, transform.rotation.z);
+            transform.localRotation = Quaternion.Euler(pitch, transform.localRotation.y, transform.localRotation.z);
+        }
+
+        //FOV
+
+        public void SetFOV(float fov)
+        {
+            if(camera == null) return;
+            camera.fieldOfView = fov;
+        }
+
+        public float GetFOV()
+        {
+            if(camera == null) return baseFOV;
+            return camera.fieldOfView;
         }
 
         //Input
@@ -132,13 +148,11 @@ namespace Mandible.PlayerController
             input.Player.Look.canceled += _ => lookInput = Vector2.zero;
         }
 
-        #if MANDIBLE_PLAYER_CONTROLLER
         void HandleControllerParameters()
         {
             if (playerController != null)
-                SetProceduralT(playerController.isInAir() ? 0f : playerController.GetVelocityT());
+                SetProceduralT(playerController.IsInAir() ? 0f : playerController.GetVelocityT());
         }
-        #endif
 
         //Noise
 
@@ -146,7 +160,8 @@ namespace Mandible.PlayerController
         {
             Vector3 noise = GetProceduralNoise();
             Vector3 shake = GetProceduralShake();
-            transform.localPosition = localPos + noise + shake;
+            Vector3 finalPos = localPos + (noise + shake) * GetStabilityInverse();
+            transform.localPosition = finalPos;
         }
 
         Vector3 smoothedNoise;
@@ -187,6 +202,7 @@ namespace Mandible.PlayerController
             
             Vector3 target = baseBob + noise;
             smoothedNoise = Vector3.Lerp(smoothedNoise, target, RESPONSE_SPEED * Time.deltaTime);
+
             return smoothedNoise;
         }
 
@@ -223,6 +239,11 @@ namespace Mandible.PlayerController
             this.proceduralT = t;
         }
 
+        public float GetStabilityInverse()
+        {
+            return 1f - cameraStability;
+        }
+
         public void AddShakeImpulse(Vector3 force, float scale = 1f)
         {
             Vector3 localForce = transform.InverseTransformDirection(force) * scale;
@@ -232,6 +253,11 @@ namespace Mandible.PlayerController
         public void AddFlatImpulse(Vector3 force)
         {
             AddShakeImpulse(force, 1f);
+        }
+
+        public void AddRecoil(Vector2 recoilAmount)
+        {
+            recoil += recoilAmount;
         }
 
         //Settings
@@ -248,8 +274,6 @@ namespace Mandible.PlayerController
         }
 
         //Events
-
-        #if MANDIBLE_PLAYER_CONTROLLER
         void EnablePlayerControllerEvents()
         {
             if (playerController == null) return;
@@ -265,6 +289,5 @@ namespace Mandible.PlayerController
             playerController.OnForceApplied -= AddFlatImpulse;
             playerController.OnGroundImpact -= AddFlatImpulse;
         }
-        #endif
     }
 }

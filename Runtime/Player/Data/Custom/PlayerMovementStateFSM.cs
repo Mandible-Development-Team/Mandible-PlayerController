@@ -3,7 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine.Events;
 using Mandible.PlayerController;
-using Mandible.Systems.Data;
+using Mandible.Core.Data;
 
 namespace Mandible.PlayerController{
     public class PlayerMovementStateFSM : FiniteStateMachine
@@ -38,11 +38,11 @@ namespace Mandible.PlayerController{
         {
             PlayerController controller = ctx.controller;
 
-            if (controller.isInAir())
+            if (controller.IsInAir())
             {
                 currentState = PlayerMovementState.Jumping;
             }
-            else if (controller.isMoving())
+            else if (controller.IsMoving())
             {
                 currentState = PlayerMovementState.Running;
             }

@@ -3,7 +3,9 @@ using UnityEngine.InputSystem;
 using System.Collections;
 using System.Collections.Generic;
 using System;
+
 using Mandible.PlayerController;
+using Mandible.Core;
 
 namespace Mandible.PlayerController
 {
@@ -43,18 +45,22 @@ namespace Mandible.PlayerController
         public event Action<Vector3> OnForceApplied;
         public event Action<Vector3> OnGroundImpact;
 
-        // Internal
-        private Vector3 lastPosition;
-        [SerializeField] private float currentSpeed;
+        // Position / Speed
+        protected float currentSpeed;
+        protected Vector3 currentVelocity;
+        protected Vector3 lastPosition;
 
         // Velocities
-        Vector3 moveVelocity;
-        Vector3 externalVelocity;
-        Vector3 gravityVelocity;
-        Vector3 groundImpact;
+        protected Vector3 moveVelocity;
+        protected Vector3 externalVelocity;
+        protected Vector3 gravityVelocity;
+        protected Vector3 groundImpact;
 
         Vector3 smoothedMove;
         bool wasGrounded = false;
+
+        //Transform
+        Quaternion initialRotation = Quaternion.Euler(0f, 0f, 0f);
         float yaw, pitch;
 
         //Ground
@@ -64,6 +70,9 @@ namespace Mandible.PlayerController
         // Agent
         public Vector3 lookDirection { get; set; }
 
+        //Capabilities
+        [SerializeField] protected List<ICapability> capabilities = new List<ICapability>();
+
         // Input
         private PlayerInputSystem playerInputSystem;
         public IInputSystem Input => playerInputSystem;
@@ -72,21 +81,25 @@ namespace Mandible.PlayerController
         Vector2 moveInput;
         Vector2 lookInput;
 
-        void Awake()
+        protected virtual void Awake()
         {
             if(camera == null) camera = GetComponentInChildren<Camera>();
             if(controller == null) controller = GetComponent<CharacterController>();
             if(capsule == null) capsule = GetComponent<CapsuleCollider>();
         }
 
-        void Start()
+        protected virtual void Start()
         {
             InitializePlayer();
             InitializeCamera();
+
+            InitializeTransform();
             InitializeInput();
+
+            InitializeCapabilities();
         }
         
-        void Update()
+        protected virtual void Update()
         {
             HandleLook();
             HandleMovement();
@@ -118,6 +131,11 @@ namespace Mandible.PlayerController
                 camera.gameObject.AddComponent<CameraController>();
         }
 
+        void InitializeTransform()
+        {
+            initialRotation = transform.rotation;
+        }
+
         void InitializeInput()
         {
             if(player == null) return;
@@ -138,6 +156,14 @@ namespace Mandible.PlayerController
             input.Player.Jump.performed += _ => Jump();
         }
 
+        void InitializeCapabilities()
+        {
+            foreach(var capability in capabilities)
+            {
+                capability.Initialize(this);
+            }
+        }
+
         //Movement
 
         void UpdateMovementData()
@@ -147,6 +173,7 @@ namespace Mandible.PlayerController
 
             //Speed
             currentSpeed = (transform.position - lastPosition).magnitude / Time.deltaTime;
+            currentVelocity = (transform.position - lastPosition) / Time.deltaTime;
             lastPosition = transform.position;
         }
 
@@ -154,10 +181,11 @@ namespace Mandible.PlayerController
         {
             Vector3 g = gravityDirection.normalized;
 
-            Vector3 right = Vector3.Cross(transform.forward, g).normalized;
-            Vector3 forward = Vector3.Cross(g, right).normalized;
+            Vector3 camForward = Vector3.ProjectOnPlane(camera.transform.forward, g).normalized;
+            Vector3 camRight   = Vector3.ProjectOnPlane(camera.transform.right, g).normalized;
 
-            Vector3 inputDir = (right * moveInput.x + forward * moveInput.y);
+            Vector3 inputDir = camRight * moveInput.x + camForward * moveInput.y;
+
             Vector3 targetMove = inputDir * movementSpeed;
 
             moveVelocity = Vector3.Lerp(moveVelocity, targetMove, movementSmoothing * Time.deltaTime);
@@ -285,12 +313,31 @@ namespace Mandible.PlayerController
             rb.AddForce(impulse, ForceMode.Impulse);
         }
 
+        //Capabilities
+
+        public T GetCapability<T>() where T : ICapability
+        {
+            foreach(var capability in capabilities)
+            {
+                if(capability is T) return (T)capability;
+            }
+
+            return default(T);
+        }
+
+        public void AddCapability<T>() where T : ICapability
+        {
+            T capability = Activator.CreateInstance<T>();
+            capabilities.Add(capability);
+        }
+
         //Input
 
         Quaternion yawFrame = Quaternion.identity;
         void HandleLook()
         {
             float sensitivity = mouseSensitivity;
+
             if(currentDevice is Gamepad)
                 sensitivity = controllerSensitivity;
 
@@ -304,8 +351,9 @@ namespace Mandible.PlayerController
 
         void HandleLanding()
         {
-            if(!wasGrounded && isGrounded)
+            if(!wasGrounded && isGrounded){
                 OnGroundImpact?.Invoke(groundImpact);
+            }
 
             wasGrounded = isGrounded;
         }
@@ -346,18 +394,24 @@ namespace Mandible.PlayerController
             }
         }
 
-        //Getters
+        //Helpers
 
-        public bool isMoving()
+        public bool IsWalking()
         {
-            return currentSpeed > 0.1f && moveInput.sqrMagnitude > 0.1f;
+            return IsMoving() && moveInput.sqrMagnitude > 0.1f;
         }
 
-        public bool isInAir()
+        public bool IsMoving()
+        {
+            return currentSpeed > 0.1f;
+        }
+
+        public bool IsInAir()
         {
             return !isGrounded;
         }
 
+        //Editor
 
         void OnDrawGizmos()
         {

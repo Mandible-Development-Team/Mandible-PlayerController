@@ -6,6 +6,7 @@ namespace Mandible.PlayerController{
     {
         //Monobehaviours
         PlayerController Controller { get;}
+        CameraController Camera { get; }
         
         //Other
         IInputSystem Input { get; } 

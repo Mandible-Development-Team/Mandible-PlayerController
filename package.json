@@ -9,6 +9,6 @@
     }
   ],
   "dependencies": {
-    "com.mandible.generic": "0.0.0"
+    "com.mandible.core": "0.0.0"
   }
 }

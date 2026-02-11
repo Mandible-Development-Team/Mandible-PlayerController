@@ -467,5 +467,5 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 6c7005231a7da5a4bae9a112f398e290, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: Mandible.Generic::InputManager
+  m_EditorClassIdentifier: Mandible.Core::InputManager
   inputMode: 0

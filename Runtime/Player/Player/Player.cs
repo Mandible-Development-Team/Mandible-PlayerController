@@ -7,8 +7,10 @@ namespace Mandible.PlayerController
     {
         [Header("Components")]
         [SerializeField] private PlayerController controller;
+        [SerializeField] private new CameraController camera;
 
         public PlayerController Controller => controller;
+        public CameraController Camera => camera;
 
         public IInputSystem Input { get; private set; }
         

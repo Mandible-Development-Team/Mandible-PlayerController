@@ -1,7 +1,7 @@
 using System.Collections.Generic;
 using UnityEngine.InputSystem;
 using UnityEngine;
-using Mandible.Systems.Data;
+using Mandible.Core.Data;
 
 public class PlayerInputSystem : IInputSystem
 {
