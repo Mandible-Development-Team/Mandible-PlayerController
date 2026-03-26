@@ -17,6 +17,10 @@ namespace Mandible.PlayerController
         [SerializeField] public float baseFOV = 60f;
         [SerializeField] public bool enableProceduralEffects = true;
 
+        [Header("Procedural Motion - Zoom")]
+        [SerializeField] public float zoomMultiplier = 1f;
+        [SerializeField] public float zoomTransitionSpeed = 5f;
+
         [Header("Procedural Motion - Bob")]
         [Space(8)]
         [SerializeField] float bobBaseAmplitude = 0.02f;
@@ -44,7 +48,7 @@ namespace Mandible.PlayerController
 
         [Header("Advanced")]
         [Range(0f, 1f)]
-        public float cameraStability = 0f;
+        [SerializeField] public float cameraStability = 0f;
 
         [Header("Config")]
         [SerializeField] PlayerConfigData configData;
@@ -58,6 +62,9 @@ namespace Mandible.PlayerController
         // Transform
         float yaw, pitch;
         Vector2 recoil;
+
+        //Procedural
+        float _currentZoomMultiplier = 1f;
 
         void Awake()
         {
@@ -86,14 +93,16 @@ namespace Mandible.PlayerController
 
             //Initialize
             localPos = transform.localPosition;
-            SetFOV(baseFOV);
+
+            _currentZoomMultiplier = zoomMultiplier;
         }
 
         void Update()
         {
             HandleLook();
-
             HandleControllerParameters();
+            
+            HandleFOV();
 
             if (enableProceduralEffects)
             {
@@ -120,16 +129,29 @@ namespace Mandible.PlayerController
 
         //FOV
 
+        public void HandleFOV()
+        {
+            if(camera == null) return;
+            camera.fieldOfView = baseFOV / GetZoom();
+        }
+
         public void SetFOV(float fov)
         {
             if(camera == null) return;
-            camera.fieldOfView = fov;
+            baseFOV = fov;
         }
 
-        public float GetFOV()
+        public float GetFOV() => baseFOV;
+
+        public float GetZoom()
         {
-            if(camera == null) return baseFOV;
-            return camera.fieldOfView;
+            _currentZoomMultiplier = Mathf.Lerp(_currentZoomMultiplier, zoomMultiplier, zoomTransitionSpeed * Time.deltaTime);
+            return _currentZoomMultiplier;
+        }
+
+        public void SetZoomMultiplier(float multiplier)
+        {
+            zoomMultiplier = multiplier;
         }
 
         //Input

@@ -14,13 +14,12 @@ namespace Mandible.PlayerController
     {
         [SerializeField] private Transform playerObject;
         public IPlayer player;
-        [Header("Core Components")]
+        [Header("Components")]
         [SerializeField] public new Camera camera;
         private CapsuleCollider capsule;
         public CharacterController controller { get; set; }
         [Header("State")]
         [SerializeField] bool isGrounded;
-        [HideInInspector] public PlayerMovementStateFSM movementStateMachine; //EXPERIMENTAL
 
         [Header("Settings")]
         [SerializeField] float movementSpeed = 7f;
