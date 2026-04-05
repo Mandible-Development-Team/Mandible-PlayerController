@@ -41,6 +41,7 @@ namespace Mandible.PlayerController
         [SerializeField] PlayerConfigData configData;
 
         //Events
+        public event Action OnJump;
         public event Action<Vector3> OnForceApplied;
         public event Action<Vector3> OnGroundImpact;
 
@@ -222,9 +223,9 @@ namespace Mandible.PlayerController
             if (isGrounded)
             {
                 Vector3 g = gravityDirection.normalized;
-
                 gravityVelocity = (-g * jumpForce);
 
+                OnJump?.Invoke();
                 isGrounded = false;
             }
         }
@@ -394,15 +395,16 @@ namespace Mandible.PlayerController
         }
 
         //Helpers
-
+        private const float MOVE_INPUT_EPSILON = 1e-3f;
         public bool IsWalking()
         {
-            return IsMoving() && moveInput.sqrMagnitude > 0.1f;
+            return IsMoving() && moveInput.sqrMagnitude > MOVE_INPUT_EPSILON;
         }
 
+        private const float MOVE_VELOCITY_EPSILON = 1e-3f;
         public bool IsMoving()
         {
-            return currentSpeed > 0.1f;
+            return currentSpeed > MOVE_VELOCITY_EPSILON;
         }
 
         public bool IsInAir()
