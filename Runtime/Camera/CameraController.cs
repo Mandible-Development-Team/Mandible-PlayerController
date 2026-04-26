@@ -12,9 +12,10 @@ namespace Mandible.PlayerController
         
         [Header("Settings")]
         [Space(8)]
-        [SerializeField] public float mouseSensitivity = 3f;
+        [SerializeField] public float mouseSensitivity = 1f;
         [SerializeField] public float controllerSensitivity = 150f;
         [SerializeField] public float baseFOV = 60f;
+        [SerializeField] public bool disableLook;
         [SerializeField] public bool enableProceduralEffects = true;
 
         [Header("Procedural Motion - Zoom")]
@@ -68,6 +69,7 @@ namespace Mandible.PlayerController
 
         void Awake()
         {
+            Application.targetFrameRate = -1;
             InitializeInput();
         }
 
@@ -114,14 +116,12 @@ namespace Mandible.PlayerController
         private const float LOOK_PITCH_EPSILON = 1e-3f;
         void HandleLook()
         {
+            if(disableLook) return;
+
             float sensitivity = mouseSensitivity;
+            if (currentDevice is Gamepad) sensitivity = controllerSensitivity;
 
-            if (currentDevice is Gamepad)
-                sensitivity = controllerSensitivity;
-            
-            //yaw += lookInput.x * sensitivity * Time.deltaTime;
-            pitch -= lookInput.y * sensitivity * Time.deltaTime;
-
+            pitch -= lookInput.y * sensitivity;
             pitch = Mathf.Clamp(pitch, -90f + LOOK_PITCH_EPSILON, 90f - LOOK_PITCH_EPSILON);
 
             transform.localRotation = Quaternion.Euler(pitch, transform.localRotation.y, transform.localRotation.z);

@@ -341,7 +341,7 @@ namespace Mandible.PlayerController
             if(currentDevice is Gamepad)
                 sensitivity = controllerSensitivity;
 
-            float yawContribution = lookInput.x * sensitivity * Time.deltaTime;
+            float yawContribution = lookInput.x * sensitivity * 0.01f;
             yawFrame = Quaternion.AngleAxis(yawContribution, Vector3.up);
 
             yaw += yawContribution;
@@ -431,5 +431,3 @@ namespace Mandible.PlayerController
         }
     }
 }
-
-
