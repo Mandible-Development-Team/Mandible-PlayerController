@@ -119,9 +119,10 @@ namespace Mandible.PlayerController
             if(disableLook) return;
 
             float sensitivity = mouseSensitivity;
-            if (currentDevice is Gamepad) sensitivity = controllerSensitivity;
+            if (currentDevice is Gamepad) 
+                sensitivity = controllerSensitivity;
 
-            pitch -= lookInput.y * sensitivity;
+            pitch -= lookInput.y * sensitivity * 0.01f;
             pitch = Mathf.Clamp(pitch, -90f + LOOK_PITCH_EPSILON, 90f - LOOK_PITCH_EPSILON);
 
             transform.localRotation = Quaternion.Euler(pitch, transform.localRotation.y, transform.localRotation.z);
